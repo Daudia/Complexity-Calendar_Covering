@@ -1,7 +1,9 @@
 import random
 import copy
 import time
+import csv
 
+# Création du calendrier
 CALENDAR = [["Jan", "Feb", "Mar", "Apr", "May", "Jun", 0],
             ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec", 0],
             [1, 2, 3, 4, 5, 6, 7],
@@ -11,6 +13,7 @@ CALENDAR = [["Jan", "Feb", "Mar", "Apr", "May", "Jun", 0],
             [29, 30, 31, "Sun", "Mon", "Tues", "Wed"],
             [0, 0, 0, 0, "Thur", "Fri", "Sat"]]
 
+# Création des pièces
 PIECES = [
     [
         [0, 1, ],
@@ -63,6 +66,7 @@ PIECES = [
 ]
 
 
+# Transformation du calendrier en fonction de la date choisie. Les pièces à remplir sont marquées par un 1, les autres par un 0
 def date_calendar(chosen_date):
     calendar_copy = copy.deepcopy(CALENDAR)
     for k in range(len(calendar_copy)):
@@ -74,6 +78,7 @@ def date_calendar(chosen_date):
     return calendar_copy
 
 
+# Création de toutes les rotations de pièces possibles
 def all_rotations(pieces):
     rotations_list = []
     for piece in pieces:
@@ -86,6 +91,7 @@ def all_rotations(pieces):
     return rotations_list
 
 
+# On vérifie si la pièce donnée peut être placé à la case donnée
 def can_place_piece(piece, calendar, row, col):
     rows = len(piece)
     cols = len(piece[0])
@@ -98,6 +104,7 @@ def can_place_piece(piece, calendar, row, col):
     return True
 
 
+# Transformation du calendrier après la pose de la pièce
 def place_piece(piece, calendar, row, col):
     rows = len(piece)
     cols = len(piece[0])
@@ -108,6 +115,7 @@ def place_piece(piece, calendar, row, col):
     return calendar
 
 
+# Recherche de la prochaine case à remplir
 def find_next_empty(calendar):
     for r in range(len(calendar)):
         for c in range(len(calendar[0])):
@@ -116,27 +124,7 @@ def find_next_empty(calendar):
     return None
 
 
-'''
-def solve(calendar, pieces):
-    next_empty = find_next_empty(calendar)
-    all_rotations = all_rotations(pieces)
-    if next_empty is None:
-        return True
-    row, col = next_empty
-    for p in range(len(pieces)):
-        for r in range(len(all_rotations[p])):
-            if can_place_piece(all_rotations[p][r], calendar, row, col):
-                calendar_copy = [row.copy() for row in calendar]
-                place_piece(all_rotations[p][r], calendar_copy, row, col)
-                if solve(calendar_copy, pieces):
-                    for i in range(len(calendar)):
-                        for j in range(len(calendar[0])):
-                            boacalendarrd[i][j] = calendar_copy[i][j]
-                    return True
-    return False
-'''
-
-
+# Fonction principale, récursive, qui fait appel aux fonctions précédentes
 def count_combinations(calendar, pieces, rotations):
     next_empty = find_next_empty(calendar)
     if next_empty is None:
@@ -148,10 +136,12 @@ def count_combinations(calendar, pieces, rotations):
             if can_place_piece(rotations[p][r], calendar, row, col):
                 calendar_copy = [row.copy() for row in calendar]
                 place_piece(rotations[p][r], calendar_copy, row, col)
-                count += count_combinations(calendar_copy, pieces[:p] + pieces[p + 1:], rotations[:p] + rotations[p + 1:])
+                count += count_combinations(calendar_copy, pieces[:p] + pieces[p + 1:],
+                                            rotations[:p] + rotations[p + 1:])
     return count
 
 
+# Création d'une date aléatoire
 def random_date():
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     days_number = [k for k in range(1, 32)]
@@ -161,11 +151,15 @@ def random_date():
 
 pieces_rotations = all_rotations(PIECES)
 
-for i in range(31):
-    date = random_date()
-    dated_calendar = date_calendar(date)
-    start_time = time.time()
-    total_combinations = count_combinations(dated_calendar, PIECES, pieces_rotations)
-    end_time = round(time.time() / 10 ** 9, 3)
-    print("Pour la date ", random_date(), " il y a ", total_combinations, " combinaisons.")
-    print("Le calcul a pris ", end_time, " secondes.")
+# Création d'un fichier csv qui vient recueillir les résultats
+with open("resultats.csv", mode="w", newline='', encoding='utf-8') as csvfile:
+    csv_writer = csv.writer(csvfile, delimiter=",")
+    # Ajoutez l'en-tête du fichier CSV
+    csv_writer.writerow(["Date", "Nombre de combinaisons", "Temps de calcul (secondes)"])
+    for i in range(31):
+        date = random_date()
+        dated_calendar = date_calendar(date)
+        start_time = time.time()
+        total_combinations = count_combinations(dated_calendar, PIECES, pieces_rotations)
+        end_time = round(time.time() - start_time, 3)
+        csv_writer.writerow([date, total_combinations, end_time])
